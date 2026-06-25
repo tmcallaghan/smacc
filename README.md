@@ -14,4 +14,5 @@ mongodb 3.6 - 4.0
 
 ### execute the compatibility test
 
+export MONGO_URI="<full-uri-connection-string>"
 node small-mongodb-api-compatibility-checker.js

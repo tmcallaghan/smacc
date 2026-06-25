@@ -1,3 +1,4 @@
+globalThis.crypto = require('crypto');
 const { MongoClient, Timestamp } = require('mongodb');
 
 const uri = process.env.MONGO_URI || 'mongodb://localhost:27017';

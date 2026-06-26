@@ -236,38 +236,40 @@ async function runTests() {
     await test('$toHashedIndexKey', () => coll.aggregate([{ $project: { result: { $toHashedIndexKey: '$name' } } }]).toArray());
     await test('$toUUID', () => coll.aggregate([{ $project: { result: { $toUUID: '12345678-1234-1234-1234-123456789012' } } }]).toArray());
 
-    // OPERATORS - Accumulator (in $group)
-    await test('$accumulator', () => coll.aggregate([{ $group: { _id: null, result: { $accumulator: { init: 'function() { return 0; }', accumulate: 'function(state, val) { return state + val; }', accumulateArgs: ['$age'], merge: 'function(s1, s2) { return s1 + s2; }', lang: 'js' } } } }]).toArray());
-    await test('$addToSetGroup', () => coll.aggregate([{ $group: { _id: null, result: { $addToSet: '$dept' } } }]).toArray());
-    await test('$avgInGroup', () => coll.aggregate([{ $group: { _id: null, result: { $avg: '$age' } } }]).toArray());
-    await test('$avgInProject', () => coll.aggregate([{ $project: { result: { $avg: '$items.qty' } } }]).toArray());
-    await test('$bottom', () => coll.aggregate([{ $group: { _id: null, result: { $bottom: { output: '$name', sortBy: { age: 1 } } } } }]).toArray());
-    await test('$maxInGroup', () => coll.aggregate([{ $group: { _id: null, result: { $max: '$age' } } }]).toArray());
-    await test('$maxInProject', () => coll.aggregate([{ $project: { result: { $max: ['$age', '$score'] } } }]).toArray());
-    await test('$mergeObjectsInGroup', () => coll.aggregate([{ $group: { _id: null, result: { $mergeObjects: { name: '$name' } } } }]).toArray());
-    await test('$mergeObjectsInProject', () => coll.aggregate([{ $project: { result: { $mergeObjects: [{ a: 1 }, { b: 2 }] } } }]).toArray());
-    await test('$minInGroup', () => coll.aggregate([{ $group: { _id: null, result: { $min: '$age' } } }]).toArray());
-    await test('$minInProject', () => coll.aggregate([{ $project: { result: { $min: ['$age', '$score'] } } }]).toArray());
-    await test('$bottomN', () => coll.aggregate([{ $group: { _id: null, result: { $bottomN: { output: '$name', sortBy: { age: 1 }, n: 2 } } } }]).toArray());
-    await test('$count', () => coll.aggregate([{ $group: { _id: null, result: { $count: {} } } }]).toArray());
-    await test('$firstInGroup', () => coll.aggregate([{ $sort: { age: 1 } }, { $group: { _id: null, result: { $first: '$name' } } }]).toArray());
-    await test('$firstNInGroup', () => coll.aggregate([{ $group: { _id: null, result: { $firstN: { input: '$name', n: 2 } } } }]).toArray());
-    await test('$lastInGroup', () => coll.aggregate([{ $sort: { age: 1 } }, { $group: { _id: null, result: { $last: '$name' } } }]).toArray());
-    await test('$lastNInGroup', () => coll.aggregate([{ $group: { _id: null, result: { $lastN: { input: '$name', n: 2 } } } }]).toArray());
-    await test('$maxNInGroup', () => coll.aggregate([{ $group: { _id: null, result: { $maxN: { input: '$age', n: 2 } } } }]).toArray());
-    await test('$medianInGroup', () => coll.aggregate([{ $group: { _id: null, result: { $median: { input: '$age', method: 'approximate' } } } }]).toArray());
-    await test('$minNInGroup', () => coll.aggregate([{ $group: { _id: null, result: { $minN: { input: '$age', n: 2 } } } }]).toArray());
-    await test('$percentile', () => coll.aggregate([{ $group: { _id: null, result: { $percentile: { input: '$age', p: [0.5, 0.75], method: 'approximate' } } } }]).toArray());
-    await test('$percentileInProject', () => coll.aggregate([{ $project: { result: { $percentile: { input: ['$age', '$score'], p: [0.5], method: 'approximate' } } }}]).toArray());
-    await test('$push', () => coll.aggregate([{ $group: { _id: null, result: { $push: '$name' } } }]).toArray());
-    await test('$stdDevPop', () => coll.aggregate([{ $group: { _id: null, result: { $stdDevPop: '$age' } } }]).toArray());
-    await test('$stdDevSamp', () => coll.aggregate([{ $group: { _id: null, result: { $stdDevSamp: '$age' } } }]).toArray());
-    await test('$sum', () => coll.aggregate([{ $group: { _id: null, result: { $sum: '$age' } } }]).toArray());
-    await test('$sumInProject', () => coll.aggregate([{ $project: { result: { $sum: ['$age', '$score'] } } }]).toArray());
-    await test('$stdDevPopInProject', () => coll.aggregate([{ $project: { result: { $stdDevPop: ['$age', '$score'] } } }]).toArray());
-    await test('$stdDevSampInProject', () => coll.aggregate([{ $project: { result: { $stdDevSamp: ['$age', '$score'] } } }]).toArray());
-    await test('$top', () => coll.aggregate([{ $group: { _id: null, result: { $top: { output: '$name', sortBy: { age: -1 } } } } }]).toArray());
-    await test('$topN', () => coll.aggregate([{ $group: { _id: null, result: { $topN: { output: '$name', sortBy: { age: -1 }, n: 2 } } } }]).toArray());
+    // OPERATORS - (in $group)
+    await test('$accumulator ($group)', () => coll.aggregate([{ $group: { _id: null, result: { $accumulator: { init: 'function() { return 0; }', accumulate: 'function(state, val) { return state + val; }', accumulateArgs: ['$age'], merge: 'function(s1, s2) { return s1 + s2; }', lang: 'js' } } } }]).toArray());
+    await test('$addToSet ($group)', () => coll.aggregate([{ $group: { _id: null, result: { $addToSet: '$dept' } } }]).toArray());
+    await test('$avg ($group)', () => coll.aggregate([{ $group: { _id: null, result: { $avg: '$age' } } }]).toArray());
+    await test('$bottom ($group)', () => coll.aggregate([{ $group: { _id: null, result: { $bottom: { output: '$name', sortBy: { age: 1 } } } } }]).toArray());
+    await test('$max ($group)', () => coll.aggregate([{ $group: { _id: null, result: { $max: '$age' } } }]).toArray());
+    await test('$mergeObjects ($group)', () => coll.aggregate([{ $group: { _id: null, result: { $mergeObjects: { name: '$name' } } } }]).toArray());
+    await test('$min ($group)', () => coll.aggregate([{ $group: { _id: null, result: { $min: '$age' } } }]).toArray());
+    await test('$bottomN ($group)', () => coll.aggregate([{ $group: { _id: null, result: { $bottomN: { output: '$name', sortBy: { age: 1 }, n: 2 } } } }]).toArray());
+    await test('$count ($group)', () => coll.aggregate([{ $group: { _id: null, result: { $count: {} } } }]).toArray());
+    await test('$first ($group)', () => coll.aggregate([{ $sort: { age: 1 } }, { $group: { _id: null, result: { $first: '$name' } } }]).toArray());
+    await test('$firstN ($group)', () => coll.aggregate([{ $group: { _id: null, result: { $firstN: { input: '$name', n: 2 } } } }]).toArray());
+    await test('$last ($group)', () => coll.aggregate([{ $sort: { age: 1 } }, { $group: { _id: null, result: { $last: '$name' } } }]).toArray());
+    await test('$lastN ($group)', () => coll.aggregate([{ $group: { _id: null, result: { $lastN: { input: '$name', n: 2 } } } }]).toArray());
+    await test('$maxN ($group)', () => coll.aggregate([{ $group: { _id: null, result: { $maxN: { input: '$age', n: 2 } } } }]).toArray());
+    await test('$median ($group)', () => coll.aggregate([{ $group: { _id: null, result: { $median: { input: '$age', method: 'approximate' } } } }]).toArray());
+    await test('$minN ($group)', () => coll.aggregate([{ $group: { _id: null, result: { $minN: { input: '$age', n: 2 } } } }]).toArray());
+    await test('$percentile ($group)', () => coll.aggregate([{ $group: { _id: null, result: { $percentile: { input: '$age', p: [0.5, 0.75], method: 'approximate' } } } }]).toArray());
+    await test('$push ($group)', () => coll.aggregate([{ $group: { _id: null, result: { $push: '$name' } } }]).toArray());
+    await test('$stdDevPop ($group)', () => coll.aggregate([{ $group: { _id: null, result: { $stdDevPop: '$age' } } }]).toArray());
+    await test('$stdDevSamp ($group)', () => coll.aggregate([{ $group: { _id: null, result: { $stdDevSamp: '$age' } } }]).toArray());
+    await test('$sum ($group)', () => coll.aggregate([{ $group: { _id: null, result: { $sum: '$age' } } }]).toArray());
+    await test('$top ($group)', () => coll.aggregate([{ $group: { _id: null, result: { $top: { output: '$name', sortBy: { age: -1 } } } } }]).toArray());
+    await test('$topN ($group)', () => coll.aggregate([{ $group: { _id: null, result: { $topN: { output: '$name', sortBy: { age: -1 }, n: 2 } } } }]).toArray());
+
+    // OPERATORS - (in $project)
+    await test('$avg ($project)', () => coll.aggregate([{ $project: { result: { $avg: '$items.qty' } } }]).toArray());
+    await test('$max ($project)', () => coll.aggregate([{ $project: { result: { $max: ['$age', '$score'] } } }]).toArray());
+    await test('$mergeObjects ($project)', () => coll.aggregate([{ $project: { result: { $mergeObjects: [{ a: 1 }, { b: 2 }] } } }]).toArray());
+    await test('$min ($project)', () => coll.aggregate([{ $project: { result: { $min: ['$age', '$score'] } } }]).toArray());
+    await test('$percentile ($project)', () => coll.aggregate([{ $project: { result: { $percentile: { input: ['$age', '$score'], p: [0.5], method: 'approximate' } } }}]).toArray());
+    await test('$sum ($project)', () => coll.aggregate([{ $project: { result: { $sum: ['$age', '$score'] } } }]).toArray());
+    await test('$stdDevPop ($project)', () => coll.aggregate([{ $project: { result: { $stdDevPop: ['$age', '$score'] } } }]).toArray());
+    await test('$stdDevSamp ($project)', () => coll.aggregate([{ $project: { result: { $stdDevSamp: ['$age', '$score'] } } }]).toArray());
 
     // OPERATORS - Window Functions (in $setWindowFields)
     await test('$addToSetWindow', () => coll.aggregate([{$setWindowFields: {sortBy: { age: 1 },output: {testList: {$addToSet: "$dept",window: {documents: ["unbounded", "current"]}}}}}]).toArray())

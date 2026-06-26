@@ -105,6 +105,7 @@ async function runTests() {
     await test('$subtract', () => coll.aggregate([{ $project: { result: { $subtract: ['$age', 5] } } }]).toArray());
     await test('$trunc', () => coll.aggregate([{ $project: { result: { $trunc: [4.567, 1] } } }]).toArray());
     await test('$radiansToDegrees', () => coll.aggregate([{ $project: { result: { $radiansToDegrees: 3.14159 } } }]).toArray());
+    await test('$sigmoid', () => coll.aggregate([{ $project: { result: { $sigmoid: 1 } } }]).toArray());
     await test('$sin', () => coll.aggregate([{ $project: { result: { $sin: 1 } } }]).toArray());
     await test('$sinh', () => coll.aggregate([{ $project: { result: { $sinh: 1 } } }]).toArray());
     await test('$tan', () => coll.aggregate([{ $project: { result: { $tan: 1 } } }]).toArray());

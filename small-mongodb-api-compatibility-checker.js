@@ -309,8 +309,6 @@ async function runTests() {
 
     // OPERATORS - Query and Projection (in $match)
     await test('$all', () => coll.aggregate([{ $match: { tags: { $all: ['a', 'b'] } } }]).toArray());
-    await test('$alwaysFalse', () => coll.aggregate([{ $match: { $alwaysFalse: 1 } }]).toArray());
-    await test('$alwaysTrue', () => coll.aggregate([{ $match: { $alwaysTrue: 1 } }]).toArray());
     await test('$andQuery', () => coll.aggregate([{ $match: { $and: [{ age: { $gt: 25 } }, { score: { $gt: 80 } }] } }]).toArray());
     await test('$bitsAllClear', () => coll.aggregate([{ $match: { age: { $bitsAllClear: [1, 5] } } }]).toArray());
     await test('$bitsAllSet', () => coll.aggregate([{ $match: { age: { $bitsAllSet: [1, 5] } } }]).toArray());

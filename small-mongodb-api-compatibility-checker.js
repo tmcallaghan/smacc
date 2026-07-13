@@ -2,7 +2,7 @@ globalThis.crypto = require('crypto');
 const { MongoClient, Timestamp } = require('mongodb');
 
 const uri = process.env.MONGO_URI || 'mongodb://localhost:27017';
-const dbName = 'aggregation_test';
+const dbName = 'smacc_test_db';
 const results = { passed: [], failed: [] };
 
 async function runTests() {
@@ -10,6 +10,7 @@ async function runTests() {
   try {
     await client.connect();
     const db = client.db(dbName);
+    db.dropDatabase();
     const adminDb = client.db("admin");
     const coll = db.collection('test');
     
@@ -376,6 +377,7 @@ async function runTests() {
     await test('$bit', async () => { await coll.updateOne({ _id: 1 }, { $bit: { age: { and: 30 } } }); return []; });
     await test('$setOnInsert', async () => { await coll.updateOne({ _id: 10 }, { $setOnInsert: { created: new Date() } }, { upsert: true }); return []; });
 
+    db.dropDatabase();
   } catch (err) {
     console.error('Setup error:', err.message);
   } finally {

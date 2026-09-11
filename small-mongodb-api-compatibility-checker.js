@@ -10,7 +10,7 @@ async function runTests() {
   try {
     await client.connect();
     const db = client.db(dbName);
-    db.dropDatabase();
+    await db.dropDatabase();
     const adminDb = client.db("admin");
     const coll = db.collection('test');
     
@@ -375,7 +375,7 @@ async function runTests() {
     await test('$bit', async () => { await coll.updateOne({ _id: 1 }, { $bit: { age: { and: 30 } } }); return []; });
     await test('$setOnInsert', async () => { await coll.updateOne({ _id: 10 }, { $setOnInsert: { created: new Date() } }, { upsert: true }); return []; });
 
-    db.dropDatabase();
+    await db.dropDatabase();
   } catch (err) {
     console.error('Setup error:', err.message);
   } finally {

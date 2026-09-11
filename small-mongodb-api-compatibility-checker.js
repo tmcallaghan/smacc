@@ -399,8 +399,9 @@ async function runTests() {
   }
 
   function printResults() {
+    passPercent = (results.passed.length/(results.passed.length+results.failed.length)*100).toFixed(1)
     console.log('\n' + '='.repeat(50));
-    console.log(`PASSED: ${results.passed.length}`);
+    console.log(`PASSED: ${results.passed.length} for ${passPercent}%`);
     console.log(`FAILED: ${results.failed.length}`);
     console.log('='.repeat(50));
     if (results.failed.length > 0) {

@@ -277,6 +277,7 @@ async function runTests() {
     await test('$avgWindow ($setWindowFields)', () => coll.aggregate([{ $setWindowFields: { sortBy: { age: 1 }, output: { result: { $avg: '$score' } } } }]).toArray());
     await test('$bottomWindow ($setWindowFields)', () => coll.aggregate([{ $setWindowFields: { sortBy: { age: 1 }, output: { result: { $bottom: { output: ['$name','$score'], sortBy: {age:1} } } }}}]).toArray());
     await test('$bottomNWindow ($setWindowFields)', () => coll.aggregate([{ $setWindowFields: { sortBy: { age: 1 }, output: { result: { $bottomN: { output: ['$name','$score'], sortBy: { age:1 }, n: 2 } } }}}]).toArray());
+    await test('$concatArraysWindow ($setWindowFields)', () => coll.aggregate([{ $setWindowFields: { sortBy: { age: 1 }, output: { result: { $concatArrays: '$tags', window: { documents: ['unbounded', 'current'] } } } } }]).toArray());
     await test('$countWindow ($setWindowFields)', () => coll.aggregate([{ $setWindowFields: { sortBy: { age: 1 }, output: { result: { $count: {} } } } }]).toArray());
     await test('$covariancePop ($setWindowFields)', () => coll.aggregate([{ $setWindowFields: { sortBy: { age: 1 }, output: { result: { $covariancePop: ['$age', '$score'] } } } }]).toArray());
     await test('$covarianceSamp ($setWindowFields)', () => coll.aggregate([{ $setWindowFields: { sortBy: { age: 1 }, output: { result: { $covarianceSamp: ['$age', '$score'] } } } }]).toArray());
@@ -289,15 +290,19 @@ async function runTests() {
     await test('$integral ($setWindowFields)', () => coll.aggregate([{ $setWindowFields: { sortBy: { age: 1 }, output: { result: { $integral: { input: '$score' } } } } }]).toArray());
     await test('$lastWindow ($setWindowFields)', () => coll.aggregate([{ $setWindowFields: { sortBy: { age: 1 }, output: { result: { $last: '$name' } } } }]).toArray());
     await test('$lastNWindow ($setWindowFields)', () => coll.aggregate([{ $setWindowFields: { sortBy: { age: 1 }, output: { result: { $lastN: { input: '$name', n: 2 } } } } }]).toArray());
+    await test('$linearFill ($setWindowFields)', () => coll.aggregate([{ $setWindowFields: { sortBy: { age: 1 }, output: { result: { $linearFill: '$score' } } } }]).toArray());
     await test('$locf ($setWindowFields)', () => coll.aggregate([{ $setWindowFields: { sortBy: { age: 1 }, output: { result: { $locf: '$score' } } } }]).toArray());
     await test('$maxWindow ($setWindowFields)', () => coll.aggregate([{ $setWindowFields: { sortBy: { age: 1 }, output: { result: { $max: '$score' } } } }]).toArray());
     await test('$maxNWindow ($setWindowFields)', () => coll.aggregate([{ $setWindowFields: { sortBy: { age: 1 }, output: { result: { $maxN: { input: '$score', n: 2 } } } } }]).toArray());
     await test('$medianWindow ($setWindowFields)', () => coll.aggregate([{ $setWindowFields: { sortBy: { age: 1 }, output: { result: { $median: { input: '$score', method: 'approximate' } } } } }]).toArray());
+    await test('$mergeObjectsWindow ($setWindowFields)', () => coll.aggregate([{ $setWindowFields: { sortBy: { age: 1 }, output: { result: { $mergeObjects: '$meta', window: { documents: ['unbounded', 'current'] } } } } }]).toArray());
     await test('$minWindow ($setWindowFields)', () => coll.aggregate([{ $setWindowFields: { sortBy: { age: 1 }, output: { result: { $min: '$score' } } } }]).toArray());
     await test('$minNWindow ($setWindowFields)', () => coll.aggregate([{ $setWindowFields: { sortBy: { age: 1 }, output: { result: { $minN: { input: '$score', n: 2 } } } } }]).toArray());
+    await test('$minMaxScaler ($setWindowFields)', () => coll.aggregate([{ $setWindowFields: { sortBy: { age: 1 }, output: { result: { $minMaxScaler: { input: '$score', min: 0, max: 1 }, window: { documents: ['unbounded', 'unbounded'] } } } } }]).toArray());
     await test('$percentileWindow ($setWindowFields)', () => coll.aggregate([{ $setWindowFields: { sortBy: { age: 1 }, output: { result: { $percentile: { input: '$score', p: [0.5], method: 'approximate' } } } } }]).toArray());
     await test('$pushWindow ($setWindowFields)', () => coll.aggregate([{ $setWindowFields: { sortBy: { age: 1 }, output: { result: { $push: '$name' } } } }]).toArray());
     await test('$rankWindow ($setWindowFields)', () => coll.aggregate([{ $setWindowFields: { sortBy: { age: 1 }, output: { rank: { $rank: {} } } } }]).toArray());
+    await test('$setUnionWindow ($setWindowFields)', () => coll.aggregate([{ $setWindowFields: { sortBy: { age: 1 }, output: { result: { $setUnion: '$tags', window: { documents: ['unbounded', 'current'] } } } } }]).toArray());
     await test('$shift ($setWindowFields)', () => coll.aggregate([{ $setWindowFields: { sortBy: { age: 1 }, output: { result: { $shift: { output: '$name', by: 1 } } } } }]).toArray());
     await test('$stdDevPopWindow ($setWindowFields)', () => coll.aggregate([{ $setWindowFields: { sortBy: { age: 1 }, output: { result: { $stdDevPop: '$score' } } } }]).toArray());
     await test('$stdDevSampWindow ($setWindowFields)', () => coll.aggregate([{ $setWindowFields: { sortBy: { age: 1 }, output: { result: { $stdDevSamp: '$score' } } } }]).toArray());

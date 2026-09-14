@@ -43,6 +43,7 @@ async function runTests() {
     await test('$limit', () => coll.aggregate([{ $limit: 2 }]).toArray());
     await test('$listCachedAndActiveUsers', () => db.aggregate([{ $listCachedAndActiveUsers: {} }]).toArray());
     await test('$listCatalog', () => adminDb.aggregate([{ $listCatalog: {aggregate: 1} }]).toArray());
+    await test('$listClusterCatalog', () => db.aggregate([{ $listClusterCatalog: {} }]).toArray());
     await test('$listLocalSessions', () => db.aggregate([{ $listLocalSessions: {} }]).toArray());
     await test('$listSampledQueries', () => adminDb.aggregate([{ $listSampledQueries: {aggregate: 1} }]).toArray());
     await test('$listSearchIndexes', () => coll.aggregate([{ $listSearchIndexes: {} }]).toArray());
@@ -55,6 +56,9 @@ async function runTests() {
     await test('$querySettings', () => db.aggregate([{ $querySettings: {} }]).toArray());
     await test('$queryStats', () => db.aggregate([{ $queryStats: {} }]).toArray());
     await test('$queue', () => Promise.resolve([]), true);
+    await test('$rankFusion', () => coll.aggregate([{ $rankFusion: { input: { pipelines: { byAge: [{ $sort: { age: 1 } }], byScore: [{ $sort: { score: -1 } }] } } } }]).toArray());
+    await test('$score', () => coll.aggregate([{ $score: { score: '$score', normalization: 'none' } }]).toArray());
+    await test('$scoreFusion', () => coll.aggregate([{ $scoreFusion: { input: { pipelines: { byAge: [{ $score: { score: '$age', normalization: 'none' } }] }, normalization: 'none' } } }]).toArray());
     await test('$merge', () => coll.aggregate([{ $merge: { into: 'output', whenMatched: 'replace' } }]).toArray());
     await test('$out', () => coll.aggregate([{ $out: 'output2' }]).toArray());
     await test('$project', () => coll.aggregate([{ $project: { name: 1, age: 1 } }]).toArray());
@@ -246,6 +250,7 @@ async function runTests() {
     await test('$mergeObjects ($group)', () => coll.aggregate([{ $group: { _id: null, result: { $mergeObjects: { name: '$name' } } } }]).toArray());
     await test('$min ($group)', () => coll.aggregate([{ $group: { _id: null, result: { $min: '$age' } } }]).toArray());
     await test('$bottomN ($group)', () => coll.aggregate([{ $group: { _id: null, result: { $bottomN: { output: '$name', sortBy: { age: 1 }, n: 2 } } } }]).toArray());
+    await test('$concatArrays ($group)', () => coll.aggregate([{ $group: { _id: null, result: { $concatArrays: '$tags' } } }]).toArray());
     await test('$count ($group)', () => coll.aggregate([{ $group: { _id: null, result: { $count: {} } } }]).toArray());
     await test('$first ($group)', () => coll.aggregate([{ $sort: { age: 1 } }, { $group: { _id: null, result: { $first: '$name' } } }]).toArray());
     await test('$firstN ($group)', () => coll.aggregate([{ $group: { _id: null, result: { $firstN: { input: '$name', n: 2 } } } }]).toArray());
@@ -256,6 +261,7 @@ async function runTests() {
     await test('$minN ($group)', () => coll.aggregate([{ $group: { _id: null, result: { $minN: { input: '$age', n: 2 } } } }]).toArray());
     await test('$percentile ($group)', () => coll.aggregate([{ $group: { _id: null, result: { $percentile: { input: '$age', p: [0.5, 0.75], method: 'approximate' } } } }]).toArray());
     await test('$push ($group)', () => coll.aggregate([{ $group: { _id: null, result: { $push: '$name' } } }]).toArray());
+    await test('$setUnion ($group)', () => coll.aggregate([{ $group: { _id: null, result: { $setUnion: '$tags' } } }]).toArray());
     await test('$stdDevPop ($group)', () => coll.aggregate([{ $group: { _id: null, result: { $stdDevPop: '$age' } } }]).toArray());
     await test('$stdDevSamp ($group)', () => coll.aggregate([{ $group: { _id: null, result: { $stdDevSamp: '$age' } } }]).toArray());
     await test('$sum ($group)', () => coll.aggregate([{ $group: { _id: null, result: { $sum: '$age' } } }]).toArray());
@@ -322,18 +328,22 @@ async function runTests() {
     await test('$bitsAnySet ($match)', () => coll.aggregate([{ $match: { age: { $bitsAnySet: [1, 5] } } }]).toArray());
     await test('$comment ($match)', () => coll.aggregate([{ $match: { age: { $gt: 25 }, $comment: 'test comment' } }]).toArray());
     await test('$elemMatch ($match)', () => coll.aggregate([{ $match: { items: { $elemMatch: { qty: { $gt: 4 } } } } }]).toArray());
+    await test('$eqQuery ($match)', () => coll.aggregate([{ $match: { age: { $eq: 30 } } }]).toArray());
     await test('$exists ($match)', () => coll.aggregate([{ $match: { name: { $exists: true } } }]).toArray());
     await test('$exprMatch ($match)', () => coll.aggregate([{ $match: { $expr: { $gt: ['$age', 25] } } }]).toArray());
     await test('$geoIntersectsFind ($match)', () => coll.find({location: {$geoIntersects: {$geometry: {type : "Polygon" ,coordinates: [ [ [ -73, 0 ], [ -73, 40 ], [ 0, 40 ], [ 0, 0 ], [ -73, 0 ] ] ]}}}}).toArray());
     await test('$geoIntersectsMatch ($match)', () => coll.aggregate([{$match: {location: {$geoIntersects: {$geometry: {type : "Polygon" ,coordinates: [ [ [ -73, 0 ], [ -73, 40 ], [ 0, 40 ], [ 0, 0 ], [ -73, 0 ] ] ]}}}}}]).toArray());
     await test('$geoWithinFind ($match)', () => coll.find({location: {$geoWithin: {$geometry: {type : "Polygon" ,coordinates: [ [ [ -73, 0 ], [ -73, 40 ], [ 0, 40 ], [ 0, 0 ], [ -73, 0 ] ] ]}}}}).toArray());
     await test('$geoWithinMatch ($match)', () => coll.aggregate([{$match: {location: {$geoWithin: {$geometry: {type : "Polygon" ,coordinates: [ [ [ -73, 0 ], [ -73, 40 ], [ 0, 40 ], [ 0, 0 ], [ -73, 0 ] ] ]}}}}}]).toArray());
+    await test('$gtQuery ($match)', () => coll.aggregate([{ $match: { age: { $gt: 25 } } }]).toArray());
     await test('$gteQuery ($match)', () => coll.aggregate([{ $match: { age: { $gte: 30 } } }]).toArray());
     await test('$inQuery ($match)', () => coll.aggregate([{ $match: { dept: { $in: ['Sales', 'IT'] } } }]).toArray());
     await test('$jsonSchema ($match)', () => coll.aggregate([{ $match: { $jsonSchema: { required: ['name'] } } }]).toArray());
+    await test('$ltQuery ($match)', () => coll.aggregate([{ $match: { age: { $lt: 30 } } }]).toArray());
     await test('$lteQuery ($match)', () => coll.aggregate([{ $match: { age: { $lte: 30 } } }]).toArray());
     await test('$modQuery ($match)', () => coll.aggregate([{ $match: { age: { $mod: [5, 0] } } }]).toArray());
     await test('$nearSphere ($match)', () => coll.find({location: { $nearSphere: { $geometry: { type: "Point", coordinates: [-73.99279, 40.719296] }, $maxDistance: 2000 }}}).toArray());
+    await test('$neQuery ($match)', () => coll.aggregate([{ $match: { age: { $ne: 30 } } }]).toArray());
     await test('$nin ($match)', () => coll.aggregate([{ $match: { dept: { $nin: ['HR', 'Finance'] } } }]).toArray());
     await test('$norQuery ($match)', () => coll.aggregate([{ $match: { $nor: [{ age: { $lt: 25 } }, { score: { $lt: 80 } }] } }]).toArray());
     await test('$notQuery ($match)', () => coll.aggregate([{ $match: { age: { $not: { $lt: 30 } } } }]).toArray());
@@ -359,6 +369,11 @@ async function runTests() {
     await test('$nearFind', () => coll.find({location: {$near: {$geometry: {type : "Point" ,coordinates: [ -73, 35 ]}, $maxDistance: 1000000}}}).toArray())
     await test('$where', () => coll.find({ $where: 'this.score > this.age' } ).toArray());
 
+    // OPERATORS - Projection (in find)
+    await test('$positionalProjection (find)', () => coll.find({ tags: 'a' }, { projection: { 'tags.$': 1 } }).toArray());
+    await test('$elemMatchProjection (find)', () => coll.find({}, { projection: { items: { $elemMatch: { qty: { $gt: 4 } } } } }).toArray());
+    await test('$sliceProjection (find)', () => coll.find({}, { projection: { tags: { $slice: 2 } } }).toArray());
+
     // UPDATE OPERATORS
     console.log(`** UPDATE OPERATIONS`);
     await test('$setUpdate', async () => { await coll.updateOne({ _id: 1 }, { $set: { updated: true } }); return []; });
@@ -374,6 +389,9 @@ async function runTests() {
     await test('$pull', async () => { await coll.updateOne({ _id: 3 }, { $pull: { tags: 'a' } }); return []; });
     await test('$pushUpdate', async () => { await coll.updateOne({ _id: 3 }, { $push: { tags: 'x' } }); return []; });
     await test('$pullAll', async () => { await coll.updateOne({ _id: 3 }, { $pullAll: { tags: ['x', 'c'] } }); return []; });
+    await test('$positionalUpdate', async () => { await coll.updateOne({ _id: 3, tags: 'a' }, { $set: { 'tags.$': 'A' } }); return []; });
+    await test('$allPositionalUpdate', async () => { await coll.updateOne({ _id: 3 }, { $set: { 'tags.$[]': 'z' } }); return []; });
+    await test('$filteredPositionalUpdate', async () => { await coll.updateOne({ _id: 3 }, { $set: { 'tags.$[el]': 'X' } }, { arrayFilters: [{ el: 'z' }] }); return []; });
     await test('$each', async () => { await coll.updateOne({ _id: 4 }, { $push: { tags: { $each: ['y', 'z'] } } }); return []; });
     await test('$position', async () => { await coll.updateOne({ _id: 4 }, { $push: { tags: { $each: ['w'], $position: 0 } } }); return []; });
     await test('$slice', async () => { await coll.updateOne({ _id: 4 }, { $push: { tags: { $each: [], $slice: 2 } } }); return []; });

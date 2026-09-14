@@ -297,6 +297,7 @@ async function runTests() {
     await test('$minNWindow ($setWindowFields)', () => coll.aggregate([{ $setWindowFields: { sortBy: { age: 1 }, output: { result: { $minN: { input: '$score', n: 2 } } } } }]).toArray());
     await test('$percentileWindow ($setWindowFields)', () => coll.aggregate([{ $setWindowFields: { sortBy: { age: 1 }, output: { result: { $percentile: { input: '$score', p: [0.5], method: 'approximate' } } } } }]).toArray());
     await test('$pushWindow ($setWindowFields)', () => coll.aggregate([{ $setWindowFields: { sortBy: { age: 1 }, output: { result: { $push: '$name' } } } }]).toArray());
+    await test('$rankWindow ($setWindowFields)', () => coll.aggregate([{ $setWindowFields: { sortBy: { age: 1 }, output: { rank: { $rank: {} } } } }]).toArray());
     await test('$shift ($setWindowFields)', () => coll.aggregate([{ $setWindowFields: { sortBy: { age: 1 }, output: { result: { $shift: { output: '$name', by: 1 } } } } }]).toArray());
     await test('$stdDevPopWindow ($setWindowFields)', () => coll.aggregate([{ $setWindowFields: { sortBy: { age: 1 }, output: { result: { $stdDevPop: '$score' } } } }]).toArray());
     await test('$stdDevSampWindow ($setWindowFields)', () => coll.aggregate([{ $setWindowFields: { sortBy: { age: 1 }, output: { result: { $stdDevSamp: '$score' } } } }]).toArray());

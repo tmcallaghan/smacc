@@ -29,7 +29,10 @@ async function runTests() {
     await test('$bucketAuto', () => coll.aggregate([{ $bucketAuto: { groupBy: '$score', buckets: 2 } }]).toArray());
     await test('$changeStream', () => Promise.resolve([]), true);
     await test('$changeStreamSplitLargeEvent', () => Promise.resolve([]), true);
-    await test('$collStats', () => coll.aggregate([{ $collStats: { latencyStats: {} } }]).toArray());
+    await test('$collStats (count)', () => coll.aggregate([{ $collStats: { count: {} } }]).toArray());
+    await test('$collStats (latencyStats)', () => coll.aggregate([{ $collStats: { latencyStats: {} } }]).toArray());
+    await test('$collStats (qyeryExecStats)', () => coll.aggregate([{ $collStats: { queryExecStats: {} } }]).toArray());
+    await test('$collStats (storageStats)', () => coll.aggregate([{ $collStats: { storageStats: {scale:1024*1024*1024} } }]).toArray());
     await test('$currentOp', () => adminDb.aggregate([{ $currentOp: {} }]).toArray());
     await test('$count', () => coll.aggregate([{ $count: 'total' }]).toArray());
     await test('$densify', () => coll.aggregate([{ $densify: { field: 'age', range: { step: 1, bounds: [25, 35] } } }]).toArray());

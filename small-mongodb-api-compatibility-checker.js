@@ -1,5 +1,5 @@
 globalThis.crypto = require('crypto');
-const { MongoClient, Timestamp } = require('mongodb');
+const { MongoClient, Timestamp, Binary } = require('mongodb');
 
 const uri = process.env.MONGO_URI || 'mongodb://localhost:27017';
 const dbName = 'smacc_test_db';
@@ -22,6 +22,13 @@ async function runTests() {
       { _id: 4, name: 'Diana', age: 28, score: 95, dept: 'IT', salary: 65000, tags: ['d'], date: new Date('2024-04-05'), items: [{ qty: 2, price: 20 }], location: { type: "Point", coordinates: [-76.21, 31.55] }, ts: new Timestamp()}
     ]);
     await coll.createIndex({ location: "2dsphere" });
+    const coll2d = db.collection('test2d');
+    await coll2d.insertMany([
+      { _id: 1, loc: [-72.11, 35.66] },
+      { _id: 2, loc: [-71.12, 24.86] },
+      { _id: 3, loc: [-74.44, 32.44] },
+      { _id: 4, loc: [-76.21, 31.55] }
+    ]);
 
     // AGGREGATION STAGES
     await test('$addFields', () => coll.aggregate([{ $addFields: { newField: 'test' } }]).toArray());
@@ -47,6 +54,7 @@ async function runTests() {
     await test('$listCachedAndActiveUsers', () => db.aggregate([{ $listCachedAndActiveUsers: {} }]).toArray());
     await test('$listCatalog', () => adminDb.aggregate([{ $listCatalog: {aggregate: 1} }]).toArray());
     await test('$listClusterCatalog', () => db.aggregate([{ $listClusterCatalog: {} }]).toArray());
+    await test('$listMqlEntities', () => adminDb.aggregate([{ $listMqlEntities: { entityType: 'aggregationStages' } }]).toArray());
     await test('$listLocalSessions', () => db.aggregate([{ $listLocalSessions: {} }]).toArray());
     await test('$listSampledQueries', () => adminDb.aggregate([{ $listSampledQueries: {aggregate: 1} }]).toArray());
     await test('$listSearchIndexes', () => coll.aggregate([{ $listSearchIndexes: {} }]).toArray());
@@ -144,6 +152,9 @@ async function runTests() {
     await test('$slice', () => coll.aggregate([{ $project: { result: { $slice: ['$tags', 1] } } }]).toArray());
     await test('$sortArray', () => coll.aggregate([{ $project: { result: { $sortArray: { input: '$tags', sortBy: 1 } } } }]).toArray());
     await test('$zip', () => coll.aggregate([{ $project: { result: { $zip: { inputs: [['a', 'b'], [1, 2]] } } } }]).toArray());
+    await test('$arrayIndexAs ($map)', () => coll.aggregate([{ $project: { result: { $map: { input: '$tags', as: 't', arrayIndexAs: 'i', in: { $concat: ['$$t', { $toString: '$$i' }] } } } } }]).toArray());
+    await test('$arrayIndexAs ($filter)', () => coll.aggregate([{ $project: { result: { $filter: { input: '$tags', as: 't', arrayIndexAs: 'i', cond: { $eq: ['$$i', 0] } } } } }]).toArray());
+    await test('$arrayIndexAs ($reduce)', () => coll.aggregate([{ $project: { result: { $reduce: { input: '$tags', initialValue: 0, arrayIndexAs: 'i', in: { $add: ['$$value', '$$i'] } } } } }]).toArray());
 
     // OPERATORS - Set
     await test('$setDifference', () => coll.aggregate([{ $project: { result: { $setDifference: [['a', 'b', 'c'], ['b', 'd']] } } }]).toArray());
@@ -178,6 +189,7 @@ async function runTests() {
     await test('$switch', () => coll.aggregate([{ $project: { result: { $switch: { branches: [{ case: { $eq: ['$age', 25] }, then: 'match' }], default: 'no match' } } } }]).toArray());
 
     // OPERATORS - Date
+    await test('$currentDateExpression', () => coll.aggregate([{ $project: { result: { $currentDate: {} } } }]).toArray());
     await test('$dateAdd', () => coll.aggregate([{ $project: { result: { $dateAdd: { startDate: '$date', unit: 'day', amount: 1 } } } }]).toArray());
     await test('$dateDiff', () => coll.aggregate([{ $project: { result: { $dateDiff: { startDate: '$date', endDate: new Date(), unit: 'day' } } } }]).toArray());
     await test('$dateFromParts', () => coll.aggregate([{ $project: { result: { $dateFromParts: { year: 2024, month: 1, day: 1 } } } }]).toArray());
@@ -243,6 +255,21 @@ async function runTests() {
     await test('$type', () => coll.aggregate([{ $project: { result: { $type: '$age' } } }]).toArray());
     await test('$toHashedIndexKey', () => coll.aggregate([{ $project: { result: { $toHashedIndexKey: '$name' } } }]).toArray());
     await test('$toUUID', () => coll.aggregate([{ $project: { result: { $toUUID: '12345678-1234-1234-1234-123456789012' } } }]).toArray());
+    await test('$subtype', () => coll.aggregate([{ $project: { result: { $subtype: new Binary(Buffer.from('abc'), 0) } } }]).toArray());
+    await test('$createObjectId', () => coll.aggregate([{ $project: { result: { $createObjectId: {} } } }]).toArray());
+    await test('$toArray', () => coll.aggregate([{ $project: { result: { $toArray: '["a", "b"]' } } }]).toArray());
+    await test('$toObject', () => coll.aggregate([{ $project: { result: { $toObject: '{"a": 1}' } } }]).toArray());
+    await test('$serializeEJSON', () => coll.aggregate([{ $project: { result: { $serializeEJSON: { input: '$$ROOT' } } } }]).toArray());
+    await test('$deserializeEJSON', () => coll.aggregate([{ $project: { result: { $deserializeEJSON: { input: { $literal: { $oid: '507f1f77bcf86cd799439011' } } } } } }]).toArray());
+
+    // OPERATORS - Hash
+    await test('$hash', () => coll.aggregate([{ $project: { result: { $hash: { input: '$name', algorithm: 'sha256' } } } }]).toArray());
+    await test('$hexHash', () => coll.aggregate([{ $project: { result: { $hexHash: { input: '$name', algorithm: 'sha256' } } } }]).toArray());
+
+    // OPERATORS - Vector Similarity
+    await test('$similarityCosine', () => coll.aggregate([{ $project: { result: { $similarityCosine: [[1, 2, 3], [1, 2, 4]] } } }]).toArray());
+    await test('$similarityDotProduct', () => coll.aggregate([{ $project: { result: { $similarityDotProduct: [[1, 2, 3], [1, 2, 4]] } } }]).toArray());
+    await test('$similarityEuclidean', () => coll.aggregate([{ $project: { result: { $similarityEuclidean: [[1, 2, 3], [1, 2, 4]] } } }]).toArray());
 
     // OPERATORS - (in $group)
     await test('$accumulator ($group)', () => coll.aggregate([{ $group: { _id: null, result: { $accumulator: { init: 'function() { return 0; }', accumulate: 'function(state, val) { return state + val; }', accumulateArgs: ['$age'], merge: 'function(s1, s2) { return s1 + s2; }', lang: 'js' } } } }]).toArray());
@@ -322,6 +349,29 @@ async function runTests() {
     // OPERATORS - Variable
     await test('$let', () => coll.aggregate([{ $project: { result: { $let: { vars: { x: 5 }, in: { $multiply: ['$$x', 2] } } } } }]).toArray());
 
+    // SYSTEM VARIABLES
+    await test('$$NOW', () => coll.aggregate([{ $project: { result: '$$NOW' } }]).toArray());
+    await test('$$CLUSTER_TIME', () => coll.aggregate([{ $project: { result: '$$CLUSTER_TIME' } }]).toArray());
+    await test('$$USER_ROLES', () => coll.aggregate([{ $project: { result: '$$USER_ROLES' } }]).toArray());
+    await test('$$ROOT', () => coll.aggregate([{ $replaceWith: { doc: '$$ROOT' } }]).toArray());
+    await test('$$CURRENT', () => coll.aggregate([{ $project: { result: '$$CURRENT.name' } }]).toArray());
+    await test('$$REMOVE', () => coll.aggregate([{ $project: { result: { $cond: [{ $eq: ['$dept', 'IT'] }, '$$REMOVE', '$name'] } } }]).toArray());
+    await test('$$DESCEND', () => coll.aggregate([{ $redact: '$$DESCEND' }]).toArray());
+    await test('$$PRUNE', () => coll.aggregate([{ $redact: '$$PRUNE' }]).toArray());
+    await test('$$KEEP', () => coll.aggregate([{ $redact: { $cond: [{ $eq: ['$dept', 'Sales'] }, '$$KEEP', '$$PRUNE'] } }]).toArray());
+    await test('$$SEARCH_META', () => coll.aggregate([{ $search: { text: { query: 'Alice', path: 'name' } } }, { $project: { result: '$$SEARCH_META' } }]).toArray(), true);
+    await test('$$IDX ($map)', () => coll.aggregate([{ $project: { result: { $map: { input: '$tags', in: '$$IDX' } } } }]).toArray());
+    await test('$$IDX ($filter)', () => coll.aggregate([{ $project: { result: { $filter: { input: '$tags', cond: { $eq: ['$$IDX', 0] } } } } }]).toArray());
+    await test('$$IDX ($reduce)', () => coll.aggregate([{ $project: { result: { $reduce: { input: '$tags', initialValue: 0, in: { $add: ['$$value', '$$IDX'] } } } } }]).toArray());
+
+    // OPERATORS - Queryable Encryption text search
+    // Full support requires an encrypted collection (replica set + crypt_shared/mongocryptd), so these
+    // only verify the server recognizes and parses the expression: no documents reach the $expr stage.
+    await test('$encStrContains', () => coll.aggregate([{ $match: { _id: -1 } }, { $match: { $expr: { $encStrContains: { input: '$name', substring: 'li' } } } }]).toArray());
+    await test('$encStrStartsWith', () => coll.aggregate([{ $match: { _id: -1 } }, { $match: { $expr: { $encStrStartsWith: { input: '$name', prefix: 'A' } } } }]).toArray());
+    await test('$encStrEndsWith', () => coll.aggregate([{ $match: { _id: -1 } }, { $match: { $expr: { $encStrEndsWith: { input: '$name', suffix: 'e' } } } }]).toArray());
+    await test('$encStrNormalizedEq', () => coll.aggregate([{ $match: { _id: -1 } }, { $match: { $expr: { $encStrNormalizedEq: { input: '$name', string: 'alice' } } } }]).toArray());
+
     // OPERATORS - Query and Projection (in $match)
     await test('$all ($match)', () => coll.aggregate([{ $match: { tags: { $all: ['a', 'b'] } } }]).toArray());
     await test('$andQuery ($match)', () => coll.aggregate([{ $match: { $and: [{ age: { $gt: 25 } }, { score: { $gt: 80 } }] } }]).toArray());
@@ -357,6 +407,17 @@ async function runTests() {
     await test('$text ($match)', () => Promise.resolve([]), true);
     await test('$typeQuery ($match)', () => coll.aggregate([{ $match: { name: { $type: 'string' } } }]).toArray());
 
+    // OPERATORS - Geospatial (in find)
+    await test('$geometry', () => coll.find({ location: { $geoWithin: { $geometry: { type: 'Polygon', coordinates: [[[-75, 30], [-75, 40], [-70, 40], [-70, 30], [-75, 30]]] } } } }).toArray());
+    await test('$maxDistance', () => coll.find({ location: { $near: { $geometry: { type: 'Point', coordinates: [-73, 35] }, $maxDistance: 200000 } } }).toArray());
+    await test('$minDistance', () => coll.find({ location: { $near: { $geometry: { type: 'Point', coordinates: [-73, 35] }, $minDistance: 1000, $maxDistance: 2000000 } } }).toArray());
+    // legacy coordinate pair shapes, run against a separate unindexed collection (test2d) of legacy points
+    await test('$box', () => coll2d.find({ loc: { $geoWithin: { $box: [[-75, 30], [-70, 40]] } } }).toArray());
+    await test('$center', () => coll2d.find({ loc: { $geoWithin: { $center: [[-72, 35], 5] } } }).toArray());
+    await test('$centerSphere', () => coll2d.find({ loc: { $geoWithin: { $centerSphere: [[-72, 35], 0.1] } } }).toArray());
+    await test('$polygon', () => coll2d.find({ loc: { $geoWithin: { $polygon: [[-75, 30], [-75, 40], [-70, 40], [-70, 30]] } } }).toArray());
+    await test('$uniqueDocs', () => coll2d.find({ loc: { $within: { $box: [[-75, 30], [-70, 40]], $uniqueDocs: true } } }).toArray());
+
     // OPERATORS - Object
     await test('$setField', () => coll.aggregate([{ $project: { result: { $setField: { field: 'newField', input: '$$ROOT', value: 'newValue' } } } }]).toArray());
     await test('$unsetField', () => coll.aggregate([{ $project: { result: { $unsetField: { field: 'age', input: '$$ROOT' } } } }]).toArray());
@@ -376,6 +437,10 @@ async function runTests() {
     await test('$positionalProjection (find)', () => coll.find({ tags: 'a' }, { projection: { 'tags.$': 1 } }).toArray());
     await test('$elemMatchProjection (find)', () => coll.find({}, { projection: { items: { $elemMatch: { qty: { $gt: 4 } } } } }).toArray());
     await test('$sliceProjection (find)', () => coll.find({}, { projection: { tags: { $slice: 2 } } }).toArray());
+
+    // OPERATORS - Sort and Hint (in find)
+    await test('$natural (sort)', () => coll.find({}).sort({ $natural: -1 }).toArray());
+    await test('$natural (hint)', () => coll.find({}).hint({ $natural: 1 }).toArray());
 
     // UPDATE OPERATORS
     console.log(`** UPDATE OPERATIONS`);
